@@ -47,62 +47,8 @@
         
         .auth-box h1 {
             color: #2d3748;
-            margin-bottom: 40px;
-            font-size: 28px;
-        }
-        
-        .pin-input {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
             margin-bottom: 30px;
-        }
-        
-        .pin-digit {
-            width: 50px;
-            height: 60px;
-            font-size: 32px;
-            text-align: center;
-            border: 3px solid #e2e8f0;
-            border-radius: 12px;
-            transition: all 0.3s;
-        }
-        
-        .pin-digit:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-        
-        .keypad {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            max-width: 300px;
-            margin: 0 auto;
-        }
-        
-        .key {
-            background: #f8f9fa;
-            border: none;
-            padding: 20px;
-            border-radius: 12px;
-            font-size: 24px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            color: #2d3748;
-        }
-        
-        .key:active {
-            transform: scale(0.95);
-            background: #e9ecef;
-        }
-        
-        .key.delete {
-            background: #f56565;
-            color: white;
-            font-size: 20px;
+            font-size: 28px;
         }
         
         .container {
@@ -484,12 +430,6 @@
             .auth-box {
                 padding: 40px 30px;
             }
-            
-            .pin-digit {
-                width: 45px;
-                height: 55px;
-                font-size: 28px;
-            }
         }
     </style>
 </head>
@@ -500,26 +440,12 @@
             <div class="logo">🔐</div>
             <h1>Ingresa tu clave</h1>
             <div id="authError"></div>
-            <div class="pin-input">
-                <input type="password" class="pin-digit" maxlength="1" id="pin1" inputmode="numeric">
-                <input type="password" class="pin-digit" maxlength="1" id="pin2" inputmode="numeric">
-                <input type="password" class="pin-digit" maxlength="1" id="pin3" inputmode="numeric">
-                <input type="password" class="pin-digit" maxlength="1" id="pin4" inputmode="numeric">
-            </div>
-            <div class="keypad">
-                <button class="key" onclick="addDigit('1')">1</button>
-                <button class="key" onclick="addDigit('2')">2</button>
-                <button class="key" onclick="addDigit('3')">3</button>
-                <button class="key" onclick="addDigit('4')">4</button>
-                <button class="key" onclick="addDigit('5')">5</button>
-                <button class="key" onclick="addDigit('6')">6</button>
-                <button class="key" onclick="addDigit('7')">7</button>
-                <button class="key" onclick="addDigit('8')">8</button>
-                <button class="key" onclick="addDigit('9')">9</button>
-                <button class="key" onclick="clearPin()">C</button>
-                <button class="key" onclick="addDigit('0')">0</button>
-                <button class="key delete" onclick="deleteDigit()">←</button>
-            </div>
+            <form id="authForm">
+                <div class="form-group">
+                    <input type="password" id="passwordInput" placeholder="Escribe tu clave" autofocus required style="text-align: center; font-size: 20px;">
+                </div>
+                <button type="submit" id="loginBtn">Ingresar</button>
+            </form>
         </div>
     </div>
 
@@ -674,94 +600,44 @@
         // ============================================
         // ⚠️ CAMBIA ESTA CONTRASEÑA A LA QUE QUIERAS
         // ============================================
-        const MI_CLAVE = '3215';  // <-- Cámbiala aquí (puede ser números, letras, lo que sea)
+        const MI_CLAVE = '3215987';  // <-- Cámbiala aquí (puede ser números, letras, lo que sea)
         
         // ============================================
         // CONFIGURACIÓN DE SUPABASE
         // ============================================
-        const SUPABASE_URL = 'TU_SUPABASE_URL_AQUI';
-        const SUPABASE_KEY = 'TU_SUPABASE_ANON_KEY_AQUI';
-        const USER_ID = 'usuario-unico';  // ID fijo para tus datos
+        const SUPABASE_URL = 'https://arigopyvkmxxdaethtxc.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFyaWdvcHl2a214eGRhZXRodHhjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEwODk2ODYsImV4cCI6MjA3NjY2NTY4Nn0._sOI8LD9WIs9nDsPvD3h6DLLlLEqkbtEXJtqQEKTKwo';
+        const USER_ID = 'Daniel';  // ID fijo para tus datos
         
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         
         let isAuthenticated = false;
         let presupuestoActual = {};
         let gastosDelMes = [];
-        let currentPin = '';
-        let currentInput = 0;
         
         // ============================================
-        // AUTENTICACIÓN CON PIN
+        // AUTENTICACIÓN CON CONTRASEÑA
         // ============================================
-        function addDigit(digit) {
-            if (currentInput >= 4) return;
+        document.getElementById('authForm').addEventListener('submit', (e) => {
+            e.preventDefault();
             
-            currentPin += digit;
-            currentInput++;
+            const password = document.getElementById('passwordInput').value;
+            const errorDiv = document.getElementById('authError');
             
-            const input = document.getElementById(`pin${currentInput}`);
-            input.value = digit;
-            
-            if (currentInput < 4) {
-                document.getElementById(`pin${currentInput + 1}`).focus();
-            } else {
-                checkPin();
-            }
-        }
-        
-        function deleteDigit() {
-            if (currentInput === 0) return;
-            
-            const input = document.getElementById(`pin${currentInput}`);
-            input.value = '';
-            currentPin = currentPin.slice(0, -1);
-            currentInput--;
-            
-            if (currentInput > 0) {
-                document.getElementById(`pin${currentInput}`).focus();
-            }
-        }
-        
-        function clearPin() {
-            currentPin = '';
-            currentInput = 0;
-            for (let i = 1; i <= 4; i++) {
-                document.getElementById(`pin${i}`).value = '';
-            }
-            document.getElementById('pin1').focus();
-            document.getElementById('authError').innerHTML = '';
-        }
-        
-        function checkPin() {
-            if (currentPin === MI_CLAVE) {
+            if (password === MI_CLAVE) {
                 isAuthenticated = true;
                 localStorage.setItem('authenticated', 'true');
                 showApp();
                 loadData();
             } else {
-                document.getElementById('authError').innerHTML = '<div class="error">❌ Clave incorrecta</div>';
+                errorDiv.innerHTML = '<div class="error">❌ Clave incorrecta</div>';
+                document.getElementById('passwordInput').value = '';
+                document.getElementById('passwordInput').focus();
+                
                 setTimeout(() => {
-                    clearPin();
-                }, 1000);
+                    errorDiv.innerHTML = '';
+                }, 2000);
             }
-        }
-        
-        // Permitir escribir con teclado físico
-        document.querySelectorAll('.pin-digit').forEach((input, index) => {
-            input.addEventListener('input', (e) => {
-                const value = e.target.value;
-                if (value && /^\d$/.test(value)) {
-                    addDigit(value);
-                }
-            });
-            
-            input.addEventListener('keydown', (e) => {
-                if (e.key === 'Backspace') {
-                    e.preventDefault();
-                    deleteDigit();
-                }
-            });
         });
         
         // ============================================
@@ -782,7 +658,7 @@
         function showAuth() {
             document.getElementById('authContainer').style.display = 'flex';
             document.getElementById('appContainer').style.display = 'none';
-            setTimeout(() => document.getElementById('pin1').focus(), 100);
+            setTimeout(() => document.getElementById('passwordInput').focus(), 100);
         }
         
         function showApp() {
@@ -793,7 +669,7 @@
         function logout() {
             isAuthenticated = false;
             localStorage.removeItem('authenticated');
-            clearPin();
+            document.getElementById('passwordInput').value = '';
             showAuth();
         }
         
