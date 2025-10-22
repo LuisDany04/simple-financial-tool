@@ -617,8 +617,8 @@
         // CONFIGURACIÓN DE SUPABASE
         // ============================================
         // ⚠️ REEMPLAZA ESTOS VALORES CON LOS TUYOS
-        const SUPABASE_URL = 'TU_SUPABASE_URL_AQUI';
-        const SUPABASE_KEY = 'TU_SUPABASE_ANON_KEY_AQUI';
+        const SUPABASE_URL = 'https://arigopyvkmxxdaethtxc.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFyaWdvcHl2a214eGRhZXRodHhjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEwODk2ODYsImV4cCI6MjA3NjY2NTY4Nn0._sOI8LD9WIs9nDsPvD3h6DLLlLEqkbtEXJtqQEKTKwo';
         
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         

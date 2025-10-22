@@ -32,18 +32,77 @@
         
         .auth-box {
             background: white;
-            padding: 40px 30px;
+            padding: 50px 40px;
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             width: 100%;
             max-width: 400px;
+            text-align: center;
+        }
+        
+        .auth-box .logo {
+            font-size: 64px;
+            margin-bottom: 20px;
         }
         
         .auth-box h1 {
             color: #2d3748;
-            margin-bottom: 30px;
-            text-align: center;
+            margin-bottom: 40px;
             font-size: 28px;
+        }
+        
+        .pin-input {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+        
+        .pin-digit {
+            width: 50px;
+            height: 60px;
+            font-size: 32px;
+            text-align: center;
+            border: 3px solid #e2e8f0;
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+        
+        .pin-digit:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+        
+        .key {
+            background: #f8f9fa;
+            border: none;
+            padding: 20px;
+            border-radius: 12px;
+            font-size: 24px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #2d3748;
+        }
+        
+        .key:active {
+            transform: scale(0.95);
+            background: #e9ecef;
+        }
+        
+        .key.delete {
+            background: #f56565;
+            color: white;
+            font-size: 20px;
         }
         
         .container {
@@ -328,13 +387,6 @@
             font-weight: bold;
         }
         
-        .edit-budget-btn {
-            background: #4299e1;
-            padding: 8px 16px;
-            font-size: 14px;
-            margin-top: 10px;
-        }
-        
         .modal {
             display: none;
             position: fixed;
@@ -386,12 +438,6 @@
             padding: 0;
         }
         
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #718096;
-        }
-        
         .error {
             background: #fed7d7;
             color: #c53030;
@@ -399,6 +445,7 @@
             border-radius: 8px;
             margin-bottom: 20px;
             font-size: 14px;
+            text-align: center;
         }
         
         .success {
@@ -408,14 +455,6 @@
             border-radius: 8px;
             margin-bottom: 20px;
             font-size: 14px;
-        }
-        
-        .link-btn {
-            background: none;
-            color: #667eea;
-            text-decoration: underline;
-            font-size: 14px;
-            margin-top: 15px;
         }
         
         @media (max-width: 768px) {
@@ -441,6 +480,16 @@
             .modal-content {
                 padding: 20px;
             }
+            
+            .auth-box {
+                padding: 40px 30px;
+            }
+            
+            .pin-digit {
+                width: 45px;
+                height: 55px;
+                font-size: 28px;
+            }
         }
     </style>
 </head>
@@ -448,20 +497,29 @@
     <!-- Auth Container -->
     <div id="authContainer" class="auth-container">
         <div class="auth-box">
-            <h1>💰 Control de Gastos</h1>
+            <div class="logo">🔐</div>
+            <h1>Ingresa tu clave</h1>
             <div id="authError"></div>
-            <form id="authForm">
-                <div class="form-group">
-                    <label for="authEmail">Email</label>
-                    <input type="email" id="authEmail" required>
-                </div>
-                <div class="form-group">
-                    <label for="authPassword">Contraseña</label>
-                    <input type="password" id="authPassword" required minlength="6">
-                </div>
-                <button type="submit" id="authSubmit">Iniciar Sesión</button>
-                <button type="button" class="link-btn" id="toggleAuth">¿No tienes cuenta? Regístrate</button>
-            </form>
+            <div class="pin-input">
+                <input type="password" class="pin-digit" maxlength="1" id="pin1" inputmode="numeric">
+                <input type="password" class="pin-digit" maxlength="1" id="pin2" inputmode="numeric">
+                <input type="password" class="pin-digit" maxlength="1" id="pin3" inputmode="numeric">
+                <input type="password" class="pin-digit" maxlength="1" id="pin4" inputmode="numeric">
+            </div>
+            <div class="keypad">
+                <button class="key" onclick="addDigit('1')">1</button>
+                <button class="key" onclick="addDigit('2')">2</button>
+                <button class="key" onclick="addDigit('3')">3</button>
+                <button class="key" onclick="addDigit('4')">4</button>
+                <button class="key" onclick="addDigit('5')">5</button>
+                <button class="key" onclick="addDigit('6')">6</button>
+                <button class="key" onclick="addDigit('7')">7</button>
+                <button class="key" onclick="addDigit('8')">8</button>
+                <button class="key" onclick="addDigit('9')">9</button>
+                <button class="key" onclick="clearPin()">C</button>
+                <button class="key" onclick="addDigit('0')">0</button>
+                <button class="key delete" onclick="deleteDigit()">←</button>
+            </div>
         </div>
     </div>
 
@@ -614,28 +672,108 @@
 
     <script>
         // ============================================
+        // ⚠️ CAMBIA ESTA CONTRASEÑA A LA QUE QUIERAS
+        // ============================================
+        const MI_CLAVE = '1234';  // <-- Cámbiala aquí (puede ser números, letras, lo que sea)
+        
+        // ============================================
         // CONFIGURACIÓN DE SUPABASE
         // ============================================
-        // ⚠️ REEMPLAZA ESTOS VALORES CON LOS TUYOS
-        const SUPABASE_URL = 'https://arigopyvkmxxdaethtxc.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFyaWdvcHl2a214eGRhZXRodHhjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEwODk2ODYsImV4cCI6MjA3NjY2NTY4Nn0._sOI8LD9WIs9nDsPvD3h6DLLlLEqkbtEXJtqQEKTKwo';
+        const SUPABASE_URL = 'TU_SUPABASE_URL_AQUI';
+        const SUPABASE_KEY = 'TU_SUPABASE_ANON_KEY_AQUI';
+        const USER_ID = 'usuario-unico';  // ID fijo para tus datos
         
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         
-        let currentUser = null;
+        let isAuthenticated = false;
         let presupuestoActual = {};
         let gastosDelMes = [];
+        let currentPin = '';
+        let currentInput = 0;
+        
+        // ============================================
+        // AUTENTICACIÓN CON PIN
+        // ============================================
+        function addDigit(digit) {
+            if (currentInput >= 4) return;
+            
+            currentPin += digit;
+            currentInput++;
+            
+            const input = document.getElementById(`pin${currentInput}`);
+            input.value = digit;
+            
+            if (currentInput < 4) {
+                document.getElementById(`pin${currentInput + 1}`).focus();
+            } else {
+                checkPin();
+            }
+        }
+        
+        function deleteDigit() {
+            if (currentInput === 0) return;
+            
+            const input = document.getElementById(`pin${currentInput}`);
+            input.value = '';
+            currentPin = currentPin.slice(0, -1);
+            currentInput--;
+            
+            if (currentInput > 0) {
+                document.getElementById(`pin${currentInput}`).focus();
+            }
+        }
+        
+        function clearPin() {
+            currentPin = '';
+            currentInput = 0;
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById(`pin${i}`).value = '';
+            }
+            document.getElementById('pin1').focus();
+            document.getElementById('authError').innerHTML = '';
+        }
+        
+        function checkPin() {
+            if (currentPin === MI_CLAVE) {
+                isAuthenticated = true;
+                localStorage.setItem('authenticated', 'true');
+                showApp();
+                loadData();
+            } else {
+                document.getElementById('authError').innerHTML = '<div class="error">❌ Clave incorrecta</div>';
+                setTimeout(() => {
+                    clearPin();
+                }, 1000);
+            }
+        }
+        
+        // Permitir escribir con teclado físico
+        document.querySelectorAll('.pin-digit').forEach((input, index) => {
+            input.addEventListener('input', (e) => {
+                const value = e.target.value;
+                if (value && /^\d$/.test(value)) {
+                    addDigit(value);
+                }
+            });
+            
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace') {
+                    e.preventDefault();
+                    deleteDigit();
+                }
+            });
+        });
         
         // ============================================
         // INICIALIZACIÓN
         // ============================================
-        async function init() {
-            const { data: { session } } = await supabase.auth.getSession();
+        function init() {
+            const auth = localStorage.getItem('authenticated');
             
-            if (session) {
-                currentUser = session.user;
+            if (auth === 'true') {
+                isAuthenticated = true;
                 showApp();
-                await loadData();
+                loadData();
             } else {
                 showAuth();
             }
@@ -644,6 +782,7 @@
         function showAuth() {
             document.getElementById('authContainer').style.display = 'flex';
             document.getElementById('appContainer').style.display = 'none';
+            setTimeout(() => document.getElementById('pin1').focus(), 100);
         }
         
         function showApp() {
@@ -651,99 +790,22 @@
             document.getElementById('appContainer').style.display = 'block';
         }
         
-        // ============================================
-        // AUTENTICACIÓN
-        // ============================================
-        let isLogin = true;
-        
-        document.getElementById('toggleAuth').addEventListener('click', () => {
-            isLogin = !isLogin;
-            const submitBtn = document.getElementById('authSubmit');
-            const toggleBtn = document.getElementById('toggleAuth');
-            
-            if (isLogin) {
-                submitBtn.textContent = 'Iniciar Sesión';
-                toggleBtn.textContent = '¿No tienes cuenta? Regístrate';
-            } else {
-                submitBtn.textContent = 'Registrarse';
-                toggleBtn.textContent = '¿Ya tienes cuenta? Inicia sesión';
-            }
-        });
-        
-        document.getElementById('authForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const email = document.getElementById('authEmail').value;
-            const password = document.getElementById('authPassword').value;
-            const errorDiv = document.getElementById('authError');
-            const submitBtn = document.getElementById('authSubmit');
-            
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Cargando...';
-            errorDiv.innerHTML = '';
-            
-            try {
-                let result;
-                if (isLogin) {
-                    result = await supabase.auth.signInWithPassword({ email, password });
-                } else {
-                    result = await supabase.auth.signUp({ email, password });
-                }
-                
-                if (result.error) throw result.error;
-                
-                if (!isLogin) {
-                    errorDiv.innerHTML = '<div class="success">¡Registro exitoso! Revisa tu email para confirmar.</div>';
-                } else {
-                    currentUser = result.data.user;
-                    await initializeDefaultBudget();
-                    showApp();
-                    await loadData();
-                }
-            } catch (error) {
-                errorDiv.innerHTML = `<div class="error">${error.message}</div>`;
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = isLogin ? 'Iniciar Sesión' : 'Registrarse';
-            }
-        });
-        
-        async function logout() {
-            await supabase.auth.signOut();
-            currentUser = null;
+        function logout() {
+            isAuthenticated = false;
+            localStorage.removeItem('authenticated');
+            clearPin();
             showAuth();
         }
         
         // ============================================
         // PRESUPUESTO
         // ============================================
-        async function initializeDefaultBudget() {
-            const mes = getCurrentMonth();
-            const categorias = [
-                { categoria: 'Gastos Fijos', monto: 7500 },
-                { categoria: 'Deudas', monto: 11000 },
-                { categoria: 'Ahorro Emergencia', monto: 1000 },
-                { categoria: 'Personal', monto: 3000 },
-                { categoria: 'Pareja', monto: 2300 },
-                { categoria: 'Gastos Hormiga', monto: 0 }
-            ];
-            
-            for (const cat of categorias) {
-                await supabase.from('presupuestos').upsert({
-                    user_id: currentUser.id,
-                    categoria: cat.categoria,
-                    monto: cat.monto,
-                    mes: mes
-                });
-            }
-        }
-        
         async function loadPresupuesto() {
             const mes = getCurrentMonth();
             const { data, error } = await supabase
                 .from('presupuestos')
                 .select('*')
-                .eq('user_id', currentUser.id)
+                .eq('user_id', USER_ID)
                 .eq('mes', mes);
             
             if (error) {
@@ -761,13 +823,33 @@
                 presupuestoActual[item.categoria] = parseFloat(item.monto);
             });
             
-            // Actualizar formulario
             document.getElementById('presupGastosFijos').value = presupuestoActual['Gastos Fijos'] || 7500;
             document.getElementById('presupDeudas').value = presupuestoActual['Deudas'] || 11000;
             document.getElementById('presupAhorro').value = presupuestoActual['Ahorro Emergencia'] || 1000;
             document.getElementById('presupPersonal').value = presupuestoActual['Personal'] || 3000;
             document.getElementById('presupPareja').value = presupuestoActual['Pareja'] || 2300;
             document.getElementById('presupHormiga').value = presupuestoActual['Gastos Hormiga'] || 0;
+        }
+        
+        async function initializeDefaultBudget() {
+            const mes = getCurrentMonth();
+            const categorias = [
+                { categoria: 'Gastos Fijos', monto: 7500 },
+                { categoria: 'Deudas', monto: 11000 },
+                { categoria: 'Ahorro Emergencia', monto: 1000 },
+                { categoria: 'Personal', monto: 3000 },
+                { categoria: 'Pareja', monto: 2300 },
+                { categoria: 'Gastos Hormiga', monto: 0 }
+            ];
+            
+            for (const cat of categorias) {
+                await supabase.from('presupuestos').upsert({
+                    user_id: USER_ID,
+                    categoria: cat.categoria,
+                    monto: cat.monto,
+                    mes: mes
+                });
+            }
         }
         
         document.getElementById('presupuestoForm').addEventListener('submit', async (e) => {
@@ -793,7 +875,7 @@
                 
                 for (const [categoria, monto] of Object.entries(categorias)) {
                     const { error } = await supabase.from('presupuestos').upsert({
-                        user_id: currentUser.id,
+                        user_id: USER_ID,
                         categoria: categoria,
                         monto: monto,
                         mes: mes
@@ -828,7 +910,7 @@
             const { data, error } = await supabase
                 .from('gastos')
                 .select('*')
-                .eq('user_id', currentUser.id)
+                .eq('user_id', USER_ID)
                 .gte('fecha', startDate)
                 .lte('fecha', endDate)
                 .order('fecha', { ascending: false });
@@ -854,7 +936,7 @@
             
             try {
                 const gasto = {
-                    user_id: currentUser.id,
+                    user_id: USER_ID,
                     fecha: document.getElementById('fecha').value,
                     concepto: document.getElementById('concepto').value,
                     categoria: document.getElementById('categoria').value,
@@ -887,7 +969,7 @@
             const list = document.getElementById('expenseList');
             
             if (gastosDelMes.length === 0) {
-                list.innerHTML = '<div class="loading">No hay gastos registrados este mes</div>';
+                list.innerHTML = '<div style="text-align: center; color: #718096; padding: 40px;">No hay gastos registrados este mes</div>';
                 return;
             }
             
