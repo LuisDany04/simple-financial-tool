@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Control de Gastos</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        }
+        
+        .auth-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .auth-box {
+            background: white;
+            padding: 40px 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .auth-box h1 {
+            color: #2d3748;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 28px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            font-size: 20px;
+        }
+        
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .tab {
+            flex: 1;
+            min-width: 120px;
+            padding: 15px 10px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 600;
+            color: #495057;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+            font-size: 14px;
+        }
+        
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            background: white;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 20px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .card.warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .card.success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .card h3 {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .card .amount {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2d3748;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: 100%;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .expense-list {
+            margin-top: 20px;
+        }
+        
+        .expense-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .expense-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+        
+        .expense-info {
+            flex: 1;
+        }
+        
+        .category-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #667eea;
+            color: white;
+            border-radius: 20px;
+            font-size: 11px;
+            margin-bottom: 5px;
+        }
+        
+        .expense-concept {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+        
+        .expense-date {
+            color: #718096;
+            font-size: 13px;
+        }
+        
+        .expense-amount {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2d3748;
+        }
+        
+        .expense-actions {
+            display: flex;
+            gap: 5px;
+            margin-top: 10px;
+        }
+        
+        .btn-edit, .btn-delete {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        
+        .btn-edit {
+            background: #4299e1;
+            color: white;
+        }
+        
+        .btn-delete {
+            background: #f5576c;
+            color: white;
+        }
+        
+        .category-breakdown {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .category-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .category-card h4 {
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+        
+        .category-card .spent {
+            font-size: 20px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .category-card .budget {
+            font-size: 13px;
+            color: #718096;
+            margin-top: 5px;
+        }
+        
+        .progress-bar {
+            background: #e2e8f0;
+            height: 15px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        
+        .edit-budget-btn {
+            background: #4299e1;
+            padding: 8px 16px;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-header h2 {
+            color: #2d3748;
+            font-size: 22px;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #718096;
+            width: auto;
+            padding: 0;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+        }
+        
+        .error {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .success {
+            background: #c6f6d5;
+            color: #2f855a;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .link-btn {
+            background: none;
+            color: #667eea;
+            text-decoration: underline;
+            font-size: 14px;
+            margin-top: 15px;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 0;
+                border-radius: 0;
+                min-height: 100vh;
+            }
+            
+            .header h1 {
+                font-size: 18px;
+            }
+            
+            .card .amount {
+                font-size: 20px;
+            }
+            
+            .tab {
+                font-size: 12px;
+                padding: 12px 8px;
+            }
+            
+            .modal-content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Auth Container -->
+    <div id="authContainer" class="auth-container">
+        <div class="auth-box">
+            <h1>💰 Control de Gastos</h1>
+            <div id="authError"></div>
+            <form id="authForm">
+                <div class="form-group">
+                    <label for="authEmail">Email</label>
+                    <input type="email" id="authEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="authPassword">Contraseña</label>
+                    <input type="password" id="authPassword" required minlength="6">
+                </div>
+                <button type="submit" id="authSubmit">Iniciar Sesión</button>
+                <button type="button" class="link-btn" id="toggleAuth">¿No tienes cuenta? Regístrate</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="appContainer" style="display: none;">
+        <div class="container">
+            <div class="header">
+                <h1>💰 Control de Gastos</h1>
+                <button class="logout-btn" onclick="logout()">Salir</button>
+            </div>
+            
+            <div class="tabs">
+                <div class="tab active" onclick="showTab('resumen')">📊 Resumen</div>
+                <div class="tab" onclick="showTab('gastos')">💸 Gastos</div>
+                <div class="tab" onclick="showTab('historial')">📋 Historial</div>
+                <div class="tab" onclick="showTab('presupuesto')">⚙️ Presupuesto</div>
+            </div>
+            
+            <!-- Tab: Resumen -->
+            <div id="resumen" class="tab-content active">
+                <div class="dashboard">
+                    <div class="card">
+                        <h3>Ingreso Mensual</h3>
+                        <div class="amount">$24,800</div>
+                    </div>
+                    <div class="card warning">
+                        <h3>Total Gastado</h3>
+                        <div class="amount" id="totalGastado">$0</div>
+                    </div>
+                    <div class="card success">
+                        <h3>Disponible</h3>
+                        <div class="amount" id="disponible">$24,800</div>
+                    </div>
+                </div>
+                
+                <h2 style="margin-bottom: 15px; color: #2d3748; font-size: 18px;">Presupuesto por Categoría</h2>
+                <div class="category-breakdown" id="categoryBreakdown"></div>
+            </div>
+            
+            <!-- Tab: Gastos -->
+            <div id="gastos" class="tab-content">
+                <h2 style="margin-bottom: 20px; color: #2d3748; font-size: 20px;">Registrar Nuevo Gasto</h2>
+                <div id="gastoError"></div>
+                <form id="gastoForm">
+                    <div class="form-group">
+                        <label for="fecha">Fecha</label>
+                        <input type="date" id="fecha" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="concepto">Concepto</label>
+                        <input type="text" id="concepto" placeholder="Ej: Cena con novia" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="categoria">Categoría</label>
+                        <select id="categoria" required>
+                            <option value="">Seleccionar...</option>
+                            <option value="Gastos Fijos">Gastos Fijos</option>
+                            <option value="Deudas">Deudas</option>
+                            <option value="Ahorro Emergencia">Ahorro Emergencia</option>
+                            <option value="Personal">Personal</option>
+                            <option value="Pareja">Pareja</option>
+                            <option value="Gastos Hormiga">Gastos Hormiga/Imprevistos</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="monto">Monto</label>
+                        <input type="number" id="monto" placeholder="0.00" step="0.01" required>
+                    </div>
+                    <button type="submit" id="gastoSubmit">Agregar Gasto</button>
+                </form>
+            </div>
+            
+            <!-- Tab: Historial -->
+            <div id="historial" class="tab-content">
+                <h2 style="margin-bottom: 20px; color: #2d3748; font-size: 20px;">Historial de Gastos</h2>
+                <div id="expenseList" class="expense-list"></div>
+            </div>
+            
+            <!-- Tab: Presupuesto -->
+            <div id="presupuesto" class="tab-content">
+                <h2 style="margin-bottom: 20px; color: #2d3748; font-size: 20px;">Configurar Presupuesto</h2>
+                <div id="presupuestoError"></div>
+                <form id="presupuestoForm">
+                    <div class="form-group">
+                        <label for="presupGastosFijos">Gastos Fijos</label>
+                        <input type="number" id="presupGastosFijos" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="presupDeudas">Deudas</label>
+                        <input type="number" id="presupDeudas" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="presupAhorro">Ahorro Emergencia</label>
+                        <input type="number" id="presupAhorro" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="presupPersonal">Personal</label>
+                        <input type="number" id="presupPersonal" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="presupPareja">Pareja</label>
+                        <input type="number" id="presupPareja" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="presupHormiga">Gastos Hormiga (0 = sin límite)</label>
+                        <input type="number" id="presupHormiga" step="0.01" required>
+                    </div>
+                    <button type="submit" id="presupuestoSubmit">Guardar Presupuesto</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para editar gasto -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Editar Gasto</h2>
+                <button class="close-modal" onclick="closeEditModal()">&times;</button>
+            </div>
+            <form id="editForm">
+                <input type="hidden" id="editId">
+                <div class="form-group">
+                    <label for="editFecha">Fecha</label>
+                    <input type="date" id="editFecha" required>
+                </div>
+                <div class="form-group">
+                    <label for="editConcepto">Concepto</label>
+                    <input type="text" id="editConcepto" required>
+                </div>
+                <div class="form-group">
+                    <label for="editCategoria">Categoría</label>
+                    <select id="editCategoria" required>
+                        <option value="Gastos Fijos">Gastos Fijos</option>
+                        <option value="Deudas">Deudas</option>
+                        <option value="Ahorro Emergencia">Ahorro Emergencia</option>
+                        <option value="Personal">Personal</option>
+                        <option value="Pareja">Pareja</option>
+                        <option value="Gastos Hormiga">Gastos Hormiga/Imprevistos</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editMonto">Monto</label>
+                    <input type="number" id="editMonto" step="0.01" required>
+                </div>
+                <button type="submit">Guardar Cambios</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // CONFIGURACIÓN DE SUPABASE
+        // ============================================
+        // ⚠️ REEMPLAZA ESTOS VALORES CON LOS TUYOS
+        const SUPABASE_URL = 'TU_SUPABASE_URL_AQUI';
+        const SUPABASE_KEY = 'TU_SUPABASE_ANON_KEY_AQUI';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        let currentUser = null;
+        let presupuestoActual = {};
+        let gastosDelMes = [];
+        
+        // ============================================
+        // INICIALIZACIÓN
+        // ============================================
+        async function init() {
+            const { data: { session } } = await supabase.auth.getSession();
+            
+            if (session) {
+                currentUser = session.user;
+                showApp();
+                await loadData();
+            } else {
+                showAuth();
+            }
+        }
+        
+        function showAuth() {
+            document.getElementById('authContainer').style.display = 'flex';
+            document.getElementById('appContainer').style.display = 'none';
+        }
+        
+        function showApp() {
+            document.getElementById('authContainer').style.display = 'none';
+            document.getElementById('appContainer').style.display = 'block';
+        }
+        
+        // ============================================
+        // AUTENTICACIÓN
+        // ============================================
+        let isLogin = true;
+        
+        document.getElementById('toggleAuth').addEventListener('click', () => {
+            isLogin = !isLogin;
+            const submitBtn = document.getElementById('authSubmit');
+            const toggleBtn = document.getElementById('toggleAuth');
+            
+            if (isLogin) {
+                submitBtn.textContent = 'Iniciar Sesión';
+                toggleBtn.textContent = '¿No tienes cuenta? Regístrate';
+            } else {
+                submitBtn.textContent = 'Registrarse';
+                toggleBtn.textContent = '¿Ya tienes cuenta? Inicia sesión';
+            }
+        });
+        
+        document.getElementById('authForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('authEmail').value;
+            const password = document.getElementById('authPassword').value;
+            const errorDiv = document.getElementById('authError');
+            const submitBtn = document.getElementById('authSubmit');
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Cargando...';
+            errorDiv.innerHTML = '';
+            
+            try {
+                let result;
+                if (isLogin) {
+                    result = await supabase.auth.signInWithPassword({ email, password });
+                } else {
+                    result = await supabase.auth.signUp({ email, password });
+                }
+                
+                if (result.error) throw result.error;
+                
+                if (!isLogin) {
+                    errorDiv.innerHTML = '<div class="success">¡Registro exitoso! Revisa tu email para confirmar.</div>';
+                } else {
+                    currentUser = result.data.user;
+                    await initializeDefaultBudget();
+                    showApp();
+                    await loadData();
+                }
+            } catch (error) {
+                errorDiv.innerHTML = `<div class="error">${error.message}</div>`;
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = isLogin ? 'Iniciar Sesión' : 'Registrarse';
+            }
+        });
+        
+        async function logout() {
+            await supabase.auth.signOut();
+            currentUser = null;
+            showAuth();
+        }
+        
+        // ============================================
+        // PRESUPUESTO
+        // ============================================
+        async function initializeDefaultBudget() {
+            const mes = getCurrentMonth();
+            const categorias = [
+                { categoria: 'Gastos Fijos', monto: 7500 },
+                { categoria: 'Deudas', monto: 11000 },
+                { categoria: 'Ahorro Emergencia', monto: 1000 },
+                { categoria: 'Personal', monto: 3000 },
+                { categoria: 'Pareja', monto: 2300 },
+                { categoria: 'Gastos Hormiga', monto: 0 }
+            ];
+            
+            for (const cat of categorias) {
+                await supabase.from('presupuestos').upsert({
+                    user_id: currentUser.id,
+                    categoria: cat.categoria,
+                    monto: cat.monto,
+                    mes: mes
+                });
+            }
+        }
+        
+        async function loadPresupuesto() {
+            const mes = getCurrentMonth();
+            const { data, error } = await supabase
+                .from('presupuestos')
+                .select('*')
+                .eq('user_id', currentUser.id)
+                .eq('mes', mes);
+            
+            if (error) {
+                console.error('Error loading presupuesto:', error);
+                return;
+            }
+            
+            if (!data || data.length === 0) {
+                await initializeDefaultBudget();
+                return loadPresupuesto();
+            }
+            
+            presupuestoActual = {};
+            data.forEach(item => {
+                presupuestoActual[item.categoria] = parseFloat(item.monto);
+            });
+            
+            // Actualizar formulario
+            document.getElementById('presupGastosFijos').value = presupuestoActual['Gastos Fijos'] || 7500;
+            document.getElementById('presupDeudas').value = presupuestoActual['Deudas'] || 11000;
+            document.getElementById('presupAhorro').value = presupuestoActual['Ahorro Emergencia'] || 1000;
+            document.getElementById('presupPersonal').value = presupuestoActual['Personal'] || 3000;
+            document.getElementById('presupPareja').value = presupuestoActual['Pareja'] || 2300;
+            document.getElementById('presupHormiga').value = presupuestoActual['Gastos Hormiga'] || 0;
+        }
+        
+        document.getElementById('presupuestoForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const errorDiv = document.getElementById('presupuestoError');
+            const submitBtn = document.getElementById('presupuestoSubmit');
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Guardando...';
+            errorDiv.innerHTML = '';
+            
+            try {
+                const mes = getCurrentMonth();
+                const categorias = {
+                    'Gastos Fijos': parseFloat(document.getElementById('presupGastosFijos').value),
+                    'Deudas': parseFloat(document.getElementById('presupDeudas').value),
+                    'Ahorro Emergencia': parseFloat(document.getElementById('presupAhorro').value),
+                    'Personal': parseFloat(document.getElementById('presupPersonal').value),
+                    'Pareja': parseFloat(document.getElementById('presupPareja').value),
+                    'Gastos Hormiga': parseFloat(document.getElementById('presupHormiga').value)
+                };
+                
+                for (const [categoria, monto] of Object.entries(categorias)) {
+                    const { error } = await supabase.from('presupuestos').upsert({
+                        user_id: currentUser.id,
+                        categoria: categoria,
+                        monto: monto,
+                        mes: mes
+                    });
+                    
+                    if (error) throw error;
+                }
+                
+                errorDiv.innerHTML = '<div class="success">¡Presupuesto actualizado!</div>';
+                await loadPresupuesto();
+                updateResumen();
+                
+                setTimeout(() => {
+                    errorDiv.innerHTML = '';
+                }, 3000);
+            } catch (error) {
+                errorDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Guardar Presupuesto';
+            }
+        });
+        
+        // ============================================
+        // GASTOS
+        // ============================================
+        async function loadGastos() {
+            const mes = getCurrentMonth();
+            const startDate = `${mes}-01`;
+            const endDate = `${mes}-31`;
+            
+            const { data, error } = await supabase
+                .from('gastos')
+                .select('*')
+                .eq('user_id', currentUser.id)
+                .gte('fecha', startDate)
+                .lte('fecha', endDate)
+                .order('fecha', { ascending: false });
+            
+            if (error) {
+                console.error('Error loading gastos:', error);
+                return;
+            }
+            
+            gastosDelMes = data || [];
+            renderGastos();
+        }
+        
+        document.getElementById('gastoForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const errorDiv = document.getElementById('gastoError');
+            const submitBtn = document.getElementById('gastoSubmit');
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Guardando...';
+            errorDiv.innerHTML = '';
+            
+            try {
+                const gasto = {
+                    user_id: currentUser.id,
+                    fecha: document.getElementById('fecha').value,
+                    concepto: document.getElementById('concepto').value,
+                    categoria: document.getElementById('categoria').value,
+                    monto: parseFloat(document.getElementById('monto').value)
+                };
+                
+                const { error } = await supabase.from('gastos').insert(gasto);
+                
+                if (error) throw error;
+                
+                document.getElementById('gastoForm').reset();
+                document.getElementById('fecha').valueAsDate = new Date();
+                errorDiv.innerHTML = '<div class="success">¡Gasto registrado!</div>';
+                
+                await loadGastos();
+                updateResumen();
+                
+                setTimeout(() => {
+                    errorDiv.innerHTML = '';
+                }, 3000);
+            } catch (error) {
+                errorDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Agregar Gasto';
+            }
+        });
+        
+        function renderGastos() {
+            const list = document.getElementById('expenseList');
+            
+            if (gastosDelMes.length === 0) {
+                list.innerHTML = '<div class="loading">No hay gastos registrados este mes</div>';
+                return;
+            }
+            
+            list.innerHTML = gastosDelMes.map(gasto => `
+                <div class="expense-item">
+                    <div class="expense-header">
+                        <div class="expense-info">
+                            <div class="category-badge">${gasto.categoria}</div>
+                            <div class="expense-concept">${gasto.concepto}</div>
+                            <div class="expense-date">${formatDate(gasto.fecha)}</div>
+                        </div>
+                        <div class="expense-amount">${formatMoney(gasto.monto)}</div>
+                    </div>
+                    <div class="expense-actions">
+                        <button class="btn-edit" onclick="editGasto('${gasto.id}')">✏️ Editar</button>
+                        <button class="btn-delete" onclick="deleteGasto('${gasto.id}')">🗑️ Eliminar</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        async function deleteGasto(id) {
+            if (!confirm('¿Eliminar este gasto?')) return;
+            
+            const { error } = await supabase.from('gastos').delete().eq('id', id);
+            
+            if (error) {
+                alert('Error al eliminar: ' + error.message);
+                return;
+            }
+            
+            await loadGastos();
+            updateResumen();
+        }
+        
+        function editGasto(id) {
+            const gasto = gastosDelMes.find(g => g.id === id);
+            if (!gasto) return;
+            
+            document.getElementById('editId').value = gasto.id;
+            document.getElementById('editFecha').value = gasto.fecha;
+            document.getElementById('editConcepto').value = gasto.concepto;
+            document.getElementById('editCategoria').value = gasto.categoria;
+            document.getElementById('editMonto').value = gasto.monto;
+            
+            document.getElementById('editModal').classList.add('active');
+        }
+        
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('active');
+        }
+        
+        document.getElementById('editForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const id = document.getElementById('editId').value;
+            const updates = {
+                fecha: document.getElementById('editFecha').value,
+                concepto: document.getElementById('editConcepto').value,
+                categoria: document.getElementById('editCategoria').value,
+                monto: parseFloat(document.getElementById('editMonto').value)
+            };
+            
+            const { error } = await supabase
+                .from('gastos')
+                .update(updates)
+                .eq('id', id);
+            
+            if (error) {
+                alert('Error al actualizar: ' + error.message);
+                return;
+            }
+            
+            closeEditModal();
+            await loadGastos();
+            updateResumen();
+        });
+        
+        // ============================================
+        // RESUMEN
+        // ============================================
+        function updateResumen() {
+            const totalGastado = gastosDelMes.reduce((sum, g) => sum + parseFloat(g.monto), 0);
+            const disponible = 24800 - totalGastado;
+            
+            document.getElementById('totalGastado').textContent = ' + formatMoney(totalGastado);
+            document.getElementById('disponible').textContent = ' + formatMoney(disponible);
+            
+            const breakdown = document.getElementById('categoryBreakdown');
+            const categorias = Object.keys(presupuestoActual);
+            
+            breakdown.innerHTML = categorias.map(categoria => {
+                const gastado = gastosDelMes
+                    .filter(g => g.categoria === categoria)
+                    .reduce((sum, g) => sum + parseFloat(g.monto), 0);
+                
+                const presupuesto = presupuestoActual[categoria];
+                const porcentaje = presupuesto > 0 ? (gastado / presupuesto) * 100 : 0;
+                
+                return `
+                    <div class="category-card">
+                        <h4>${categoria}</h4>
+                        <div class="spent">${formatMoney(gastado)}</div>
+                        <div class="budget">de ${formatMoney(presupuesto)}</div>
+                        ${presupuesto > 0 ? `
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${Math.min(porcentaje, 100)}%">
+                                    ${porcentaje.toFixed(0)}%
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // ============================================
+        // UTILIDADES
+        // ============================================
+        function getCurrentMonth() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            return `${year}-${month}`;
+        }
+        
+        function formatMoney(amount) {
+            return parseFloat(amount).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        }
+        
+        function formatDate(dateStr) {
+            const date = new Date(dateStr + 'T00:00:00');
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            return date.toLocaleDateString('es-MX', options);
+        }
+        
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+            
+            if (tabName === 'resumen') updateResumen();
+            if (tabName === 'historial') renderGastos();
+        }
+        
+        // ============================================
+        // CARGAR DATOS
+        // ============================================
+        async function loadData() {
+            await loadPresupuesto();
+            await loadGastos();
+            updateResumen();
+        }
+        
+        // ============================================
+        // INICIAR APP
+        // ============================================
+        document.getElementById('fecha').valueAsDate = new Date();
+        init();
+    </script>
+</body>
+</html>
